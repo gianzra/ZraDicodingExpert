@@ -26,9 +26,15 @@ dependencies {
     implementation "com.airbnb.android:lottie:$lottie_version"
 
     // Koin Dependency Injection
-    implementation "org.koin:koin-core:$koin_version"
-    implementation "org.koin:koin-android:$koin_version"
-    implementation "org.koin:koin-android-viewmodel:$koin_version"
+//    implementation "org.koin:koin-core:$koin_version"
+//    implementation "org.koin:koin-android:$koin_version"
+//    implementation "org.koin:koin-android-view-model:$koin_version"
+
+    //new Koin Dependency Injection
+    implementation "io.insert-koin:koin-core:$koin_version"
+    implementation "io.insert-koin:koin-android:$koin_version"
+    implementation "io.insert-koin:koin-android-viewmodel:$koin_version"
+
 
     // Play Core
     implementation 'com.google.android.play:core:1.10.3'
