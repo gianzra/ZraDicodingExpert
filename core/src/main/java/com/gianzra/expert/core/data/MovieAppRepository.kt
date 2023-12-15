@@ -3,8 +3,6 @@ package com.gianzra.expert.core.data
 import com.gianzra.expert.core.data.source.local.LocalDataSource
 import com.gianzra.expert.core.data.source.remote.RemoteDataSource
 import com.gianzra.expert.core.data.source.remote.network.ApiResponse
-import com.gianzra.expert.core.data.source.remote.response.MovieResponse
-import com.gianzra.expert.core.data.source.remote.response.TvShowResponse
 import com.gianzra.expert.core.domain.model.Movie
 import com.gianzra.expert.core.domain.repository.IMovieAppRepository
 import com.gianzra.expert.core.utils.AppExecutors
