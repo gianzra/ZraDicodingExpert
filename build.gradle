@@ -1,7 +1,6 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext {
-
         agp_version1 = '8.0.1'
         agp_version = '8.0.1'
     }
@@ -39,7 +38,16 @@ buildscript {
     // Koin and Play Core Dependencies
     ext.koin_version = "2.1.6"
     ext.play_core_version = "1.9.0"
-
+    configurations.configureEach {
+        resolutionStrategy {
+            eachDependency {
+                // https://issuetracker.google.com/issues/109894262#comment9
+                if (requested.group == "org.jetbrains.trove4j" && requested.name == "trove4j" && requested.version == "20160824") {
+                    useTarget("org.jetbrains.intellij.deps:trove4j:1.0.20181211")
+                }
+            }
+        }
+    }
     repositories {
         google()
         mavenCentral()
