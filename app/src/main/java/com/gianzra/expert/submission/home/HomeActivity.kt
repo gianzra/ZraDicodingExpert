@@ -1,10 +1,12 @@
 package com.gianzra.expert.submission.home
 
 import android.os.Bundle
+import android.view.MenuItem
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
-import com.gianzra.expert.submission.databinding.ActivityHomeBinding
 import com.gianzra.expert.submission.R
 import com.gianzra.expert.submission.movies.MoviesFragment
 import com.gianzra.expert.submission.tvshows.TvShowsFragment
@@ -15,24 +17,36 @@ import kotlinx.coroutines.FlowPreview
 @ExperimentalCoroutinesApi
 class HomeActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityHomeBinding
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityHomeBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_home1)
 
         setupBottomNavigation()
         loadFragment(MoviesFragment())
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> onBackPressed()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     private fun setupBottomNavigation() {
-        binding.bottomNavigationContainer.setNavigationChangeListener { _, position ->
-            when (position) {
-                0 -> loadFragment(MoviesFragment())
-                1 -> loadFragment(TvShowsFragment())
-                2 -> moveToFavoriteFragment()
-            }
+        val btMovies = findViewById<ImageButton>(R.id.btMovies)
+        val btTvShows = findViewById<ImageButton>(R.id.btTvShows)
+        val btFavorite = findViewById<ImageButton>(R.id.btFavorite)
+
+        btMovies.setOnClickListener {
+            loadFragment(MoviesFragment())
+        }
+
+        btTvShows.setOnClickListener {
+            loadFragment(TvShowsFragment())
+        }
+
+        btFavorite.setOnClickListener {
+            moveToFavoriteFragment()
         }
     }
 
@@ -46,6 +60,7 @@ class HomeActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction().apply {
             replace(R.id.frameContainer, fragment)
             setTransition(androidx.fragment.app.FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+            addToBackStack(null)  // Add this line if you want to navigate back
             commit()
         }
     }

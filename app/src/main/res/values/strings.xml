@@ -21,4 +21,7 @@
     <string name="favorite">favorite</string>
     <string name="search">Search</string>
     <string name="no_data">NO DATA!</string>
+    <string name="tv_shows" />
+    <string name="favorites" />
+    <string name="search_hint" />
 </resources>

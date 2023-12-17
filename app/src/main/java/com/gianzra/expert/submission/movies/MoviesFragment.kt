@@ -5,9 +5,11 @@ import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.gianzra.expert.core.data.Resource
 import com.gianzra.expert.core.domain.model.Movie
@@ -16,8 +18,7 @@ import com.gianzra.expert.core.utils.SortUtils
 import com.gianzra.expert.submission.R
 import com.gianzra.expert.submission.databinding.FragmentMoviesBinding
 import com.gianzra.expert.submission.detail.DetailActivity
-import com.gianzra.expert.submission.home.HomeActivity
-import com.miguelcatalan.materialsearchview.MaterialSearchView
+import com.gianzra.expert.submission.home.SearchViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -31,17 +32,18 @@ class MoviesFragment : Fragment() {
 
     private val viewModel: MoviesViewModel by viewModel()
     private lateinit var moviesAdapter: MoviesAdapter
-    private lateinit var searchView: MaterialSearchView
+    private lateinit var searchView: SearchView
     private var sort = SortUtils.RANDOM
+
+    // Deklarasi searchViewModel
+    private val searchViewModel: SearchViewModel by viewModel()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _fragmentMoviesBinding = FragmentMoviesBinding.inflate(inflater, container, false)
-        initToolbar()
         setHasOptionsMenu(true)
-        searchView = (activity as HomeActivity).findViewById(R.id.search_view)
         return binding.root
     }
 
@@ -56,12 +58,23 @@ class MoviesFragment : Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.search_menu, menu)
         val item = menu.findItem(R.id.action_search)
-        searchView.setMenuItem(item)
-    }
 
-    private fun initToolbar() {
-        val toolbar: Toolbar = activity?.findViewById<View>(R.id.toolbar) as Toolbar
-        (activity as AppCompatActivity?)?.setSupportActionBar(toolbar)
+        if (item != null) {
+            val searchView = item.actionView as? SearchView
+
+            searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    newText?.let { searchViewModel.setSearchQuery(it) }
+                    return true
+                }
+            })
+        }
+
+        super.onCreateOptionsMenu(menu, inflater)
     }
 
     private fun initMoviesAdapter() {

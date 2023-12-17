@@ -3,6 +3,7 @@ package com.gianzra.expert.submission.tvshows
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
+import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -16,9 +17,7 @@ import com.gianzra.expert.core.utils.SortUtils
 import com.gianzra.expert.submission.R
 import com.gianzra.expert.submission.databinding.FragmentTvShowsBinding
 import com.gianzra.expert.submission.detail.DetailActivity
-import com.gianzra.expert.submission.home.HomeActivity
 import com.gianzra.expert.submission.home.SearchViewModel
-import com.miguelcatalan.materialsearchview.MaterialSearchView
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -30,21 +29,24 @@ class TvShowsFragment : Fragment() {
     private var binding: FragmentTvShowsBinding? = null
     private val viewModel: TvShowsViewModel by viewModel()
     private lateinit var tvShowsAdapter: MoviesAdapter
-    private val searchViewModel: SearchViewModel by viewModel()
-    private lateinit var searchView: MaterialSearchView
+    private lateinit var searchView: SearchView
     private var sort = SortUtils.RANDOM
+    private val searchViewModel: SearchViewModel by viewModel()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentTvShowsBinding.inflate(inflater, container, false)
-
-        setupToolbar()
-        setupOptionsMenu()
-        setupSearchView()
-
+        setHasOptionsMenu(true)
         return binding!!.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupToolbar()
+        setupRecyclerView()
+        setupSortButtons()
     }
 
     private fun setupToolbar() {
@@ -52,23 +54,8 @@ class TvShowsFragment : Fragment() {
         (requireActivity() as AppCompatActivity?)?.setSupportActionBar(toolbar)
     }
 
-    private fun setupOptionsMenu() {
-        setHasOptionsMenu(true)
-    }
-
-    private fun setupSearchView() {
-        searchView = (requireActivity() as HomeActivity).findViewById(R.id.search_view)
-    }
-
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
+    private fun setupRecyclerView() {
         tvShowsAdapter = MoviesAdapter()
-        setList(sort)
-        observeSearchQuery()
-        setSearchList()
-
         binding?.rvTvShows?.apply {
             layoutManager = LinearLayoutManager(context)
             setHasFixedSize(true)
@@ -80,11 +67,13 @@ class TvShowsFragment : Fragment() {
                 putExtra(DetailActivity.EXTRA_MOVIE, selectedData)
             })
         }
+    }
 
+
+    private fun setupSortButtons() {
         listOf(binding?.random, binding?.newest, binding?.popularity, binding?.vote)
             .forEach { button ->
                 button?.setOnClickListener {
-                    binding?.menu?.close(true)
                     sort = when (button) {
                         binding?.random -> SortUtils.RANDOM
                         binding?.newest -> SortUtils.NEWEST
@@ -93,94 +82,84 @@ class TvShowsFragment : Fragment() {
                         else -> SortUtils.RANDOM
                     }
                     setList(sort)
+
+                    // Menutup SearchView setelah melakukan sorting
+                    searchView.onActionViewCollapsed()
                 }
             }
     }
 
-
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.search_menu, menu)
-        val item = menu.findItem(R.id.action_search)
-        searchView.setMenuItem(item)
+        val searchItem = menu.findItem(R.id.action_search)
+
+        if (searchItem != null) {
+            val actionView = searchItem.actionView
+
+            if (actionView is SearchView) {
+                searchView = actionView
+
+                searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                    override fun onQueryTextSubmit(query: String?): Boolean {
+                        return true
+                    }
+
+                    override fun onQueryTextChange(newText: String?): Boolean {
+                        if (searchView != null) {
+                            newText?.let(searchViewModel::setSearchQuery)
+                        }
+                        return true
+                    }
+                })
+
+                searchView.setOnSearchClickListener {
+                    // Handle search view click event
+                }
+
+                searchView.setOnCloseListener {
+                    // Handle close event
+                    setList(sort)
+                    false
+                }
+            }
+        }
+
+        super.onCreateOptionsMenu(menu, inflater)
     }
 
     private fun setList(sort: String) {
-        viewModel.getTvShows(sort).observe(this, tvShowsObserver)
+        viewModel.getTvShows(sort).observe(viewLifecycleOwner, tvShowsObserver)
     }
 
     private val tvShowsObserver = Observer<Resource<List<Movie>>> { tvShow ->
         with(binding!!) {
-            progressBar.visibility = when (tvShow) {
-                is Resource.Loading -> View.VISIBLE
-                else -> View.GONE
-            }
-            notFound.visibility = when (tvShow) {
-                is Resource.Loading -> View.GONE
-                is Resource.Success -> View.GONE
-                is Resource.Error -> View.VISIBLE
-            }
-            notFoundText.visibility = when (tvShow) {
-                is Resource.Loading, is Resource.Success -> View.GONE
-                is Resource.Error -> View.VISIBLE
-            }
-
-            if (tvShow is Resource.Success) {
-                tvShowsAdapter.setData(tvShow.data)
-            }
-
-            if (tvShow is Resource.Error) {
-                Toast.makeText(context, "Terjadi kesalahan", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-
-    private fun observeSearchQuery() {
-        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = true
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                newText?.let(searchViewModel::setSearchQuery)
-                return true
-            }
-        })
-    }
-
-
-    private fun setSearchList() {
-        searchViewModel.tvShowResult.observe(viewLifecycleOwner) { tvShows ->
-            with(binding) {
-                if (this == null) return@with
-
-                progressBar.visibility = if (tvShows.isNullOrEmpty()) View.GONE else View.VISIBLE
-                notFound.visibility = if (tvShows.isNullOrEmpty()) View.VISIBLE else View.GONE
-                notFoundText.visibility = if (tvShows.isNullOrEmpty()) View.VISIBLE else View.GONE
-            }
-            tvShowsAdapter.setData(tvShows)
-        }
-
-        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener {
-            override fun onSearchViewShown() = hideViews()
-            override fun onSearchViewClosed() {
-                hideViews()
-                setList(sort)
-            }
-
-            private fun hideViews() {
-                with(binding) {
-                    if (this == null) return@with
-
+            when (tvShow) {
+                is Resource.Loading -> {
+                    progressBar.visibility = View.VISIBLE
+                    // Tambahan: Tambahkan log atau debugger di sini untuk melihat bahwa proses loading berlangsung.
+                }
+                is Resource.Success -> {
                     progressBar.visibility = View.GONE
                     notFound.visibility = View.GONE
                     notFoundText.visibility = View.GONE
+
+                    // Tambahan: Tambahkan log atau debugger di sini untuk melihat data yang diterima.
+                    tvShowsAdapter.setData(tvShow.data)
+                }
+                is Resource.Error -> {
+                    progressBar.visibility = View.GONE
+                    notFound.visibility = View.VISIBLE
+                    notFoundText.visibility = View.VISIBLE
+
+                    Toast.makeText(context, "Terjadi kesalahan", Toast.LENGTH_SHORT).show()
                 }
             }
-        })
+        }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
     }
-
 }
