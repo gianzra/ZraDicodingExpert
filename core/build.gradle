@@ -16,9 +16,6 @@ android {
         consumerProguardFiles "consumer-rules.pro"
         buildConfigField("String", "KEY", "\"b650046bf640e7bf7054093854b8d02a\"")
 
-        lint {
-            baseline = file("lint-baseline.xml")
-        }
     }
     kapt{
          correctErrorTypes = true
