@@ -72,7 +72,7 @@ class DetailActivity : AppCompatActivity() {
 
     private fun share() {
         val mimeType = "text/plain"
-        ShareCompat.IntentBuilder.from(this).apply {
+        ShareCompat.IntentBuilder(this).apply {
             setType(mimeType)
             setChooserTitle(getString(R.string.shareTitle))
             setText(getString(R.string.shareBody))
